@@ -1,0 +1,211 @@
+[
+  {
+    "codigo": "MESIAS",
+    "nombre": "Mesías",
+    "cargo": "Post-venta y MercadoLibre",
+    "jornada": "FULL",
+    "activo": "Sí",
+    "entrada": "07:00",
+    "salida": "16:00",
+    "tolerancia": 0,
+    "sueldo": "1500"
+  },
+  {
+    "codigo": "WEN",
+    "nombre": "Wendy Lanfranco",
+    "cargo": "Jefa de ventas",
+    "jornada": "FULL",
+    "activo": "Sí",
+    "entrada": "08:00",
+    "salida": "17:00",
+    "tolerancia": 0,
+    "sueldo": "1130"
+  },
+  {
+    "codigo": "ANGELLA",
+    "nombre": "Angella Huayhua",
+    "cargo": "Asesora de ventas",
+    "jornada": "FULL",
+    "activo": "Sí",
+    "entrada": "08:00",
+    "salida": "17:00",
+    "tolerancia": 0,
+    "sueldo": "1130"
+  },
+  {
+    "codigo": "CRIS",
+    "nombre": "Cristhian Páucar",
+    "cargo": "Jefe de almacén",
+    "jornada": "FULL",
+    "activo": "Sí",
+    "entrada": "08:00",
+    "salida": "17:00",
+    "tolerancia": 0,
+    "sueldo": "1700"
+  },
+  {
+    "codigo": "YAZID",
+    "nombre": "Yazid Chahua",
+    "cargo": "Jefe de IA",
+    "jornada": "MEDIO",
+    "activo": "Sí",
+    "entrada": "08:00",
+    "salida": "17:00",
+    "tolerancia": 0,
+    "sueldo": "750"
+  },
+  {
+    "codigo": "ALEXANDRA",
+    "nombre": "Alexandra",
+    "cargo": "Creadora de contenido",
+    "jornada": "FULL",
+    "activo": "Sí",
+    "entrada": "08:00",
+    "salida": "17:00",
+    "tolerancia": 0,
+    "sueldo": "1130"
+  },
+  {
+    "codigo": "GUSTAVO",
+    "nombre": "Gustavo Oré",
+    "cargo": "Supervisor de almacén",
+    "jornada": "FULL",
+    "activo": "Sí",
+    "entrada": "08:00",
+    "salida": "17:00",
+    "tolerancia": 0,
+    "sueldo": "1500"
+  },
+  {
+    "codigo": "EDUARDO",
+    "nombre": "Eduardo Lima",
+    "cargo": "Creador de contenido",
+    "jornada": "FULL",
+    "activo": "Sí",
+    "entrada": "07:00",
+    "salida": "16:00",
+    "tolerancia": 0,
+    "sueldo": "1500"
+  },
+  {
+    "codigo": "AIXA",
+    "nombre": "Aixa",
+    "cargo": "Jefa de Babypal",
+    "jornada": "FULL",
+    "activo": "Sí",
+    "entrada": "08:00",
+    "salida": "17:00",
+    "tolerancia": 0,
+    "sueldo": "1800"
+  },
+  {
+    "codigo": "GERARDO",
+    "nombre": "Gerardo",
+    "cargo": "Jefe de marketing",
+    "jornada": "FULL",
+    "activo": "Sí",
+    "entrada": "08:00",
+    "salida": "17:00",
+    "tolerancia": 0,
+    "sueldo": "1800"
+  },
+  {
+    "codigo": "TERESA",
+    "nombre": "Teresa Castro",
+    "cargo": "Creadora de contenido",
+    "jornada": "FULL",
+    "activo": "Sí",
+    "entrada": "08:00",
+    "salida": "17:00",
+    "tolerancia": 0,
+    "sueldo": "1600"
+  },
+  {
+    "codigo": "JIMMY",
+    "nombre": "Jimmy",
+    "cargo": "Auxiliar de transporte",
+    "jornada": "FULL",
+    "activo": "Sí",
+    "entrada": "13:00",
+    "salida": "21:00",
+    "tolerancia": 0,
+    "sueldo": "1500"
+  },
+  {
+    "codigo": "MARIA",
+    "nombre": "María",
+    "cargo": "Creadora de contenido",
+    "jornada": "FULL",
+    "activo": "Sí",
+    "entrada": "08:00",
+    "salida": "17:00",
+    "tolerancia": 0,
+    "sueldo": "1500"
+  },
+  {
+    "codigo": "JOSEPH",
+    "nombre": "Joseph Chuquillanqui",
+    "cargo": "Encargado de transporte",
+    "jornada": "FULL",
+    "activo": "Sí",
+    "entrada": "08:00",
+    "salida": "17:00",
+    "tolerancia": 0,
+    "sueldo": "1800"
+  },
+  {
+    "codigo": "GIAN",
+    "nombre": "Gian",
+    "cargo": "Auxiliar de almacén",
+    "jornada": "FULL",
+    "activo": "Sí",
+    "entrada": "08:00",
+    "salida": "17:00",
+    "tolerancia": 0,
+    "sueldo": "1500"
+  },
+  {
+    "codigo": "KEN",
+    "nombre": "Ken",
+    "cargo": "Encargado de transporte",
+    "jornada": "FULL",
+    "activo": "Sí",
+    "entrada": "07:00",
+    "salida": "16:00",
+    "tolerancia": 0,
+    "sueldo": "1800"
+  },
+  {
+    "codigo": "GIAMPIER",
+    "nombre": "Giampier",
+    "cargo": "Asistente de creación",
+    "jornada": "FULL",
+    "activo": "Sí",
+    "entrada": "08:00",
+    "salida": "17:00",
+    "tolerancia": 0,
+    "sueldo": "1500"
+  },
+  {
+    "codigo": "LUZA",
+    "nombre": "Christian Luza",
+    "cargo": "Asistente de almacén",
+    "jornada": "FULL",
+    "activo": "Sí",
+    "entrada": "08:00",
+    "salida": "17:00",
+    "tolerancia": 0,
+    "sueldo": "2100"
+  },
+  {
+    "codigo": "CRISEL",
+    "nombre": "Crisel",
+    "cargo": "Creadora de contenido",
+    "jornada": "MEDIO",
+    "activo": "Sí",
+    "entrada": "21:00",
+    "salida": "00:00",
+    "tolerancia": 0,
+    "sueldo": "750"
+  }
+]
