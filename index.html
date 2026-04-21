@@ -417,7 +417,7 @@
       <div class="success-sub" id="successMsg"></div>
       <div class="confirm-detail" id="successDetail" style="text-align:left;"></div>
       <button class="btn btn-primary" onclick="reiniciar()" style="margin-top:20px;">
-        Nueva marcación
+        🔄 Nueva marcación
       </button>
     </div>
   </div>
@@ -722,18 +722,20 @@ async function iniciarCamara() {
 function tomarFoto() {
   const video  = document.getElementById("video");
   const canvas = document.getElementById("canvas");
-  canvas.width  = video.videoWidth;
-  canvas.height = video.videoHeight;
+  const MAX_W = 480;
+  const scale = Math.min(1, MAX_W / video.videoWidth);
+  canvas.width  = Math.round(video.videoWidth  * scale);
+  canvas.height = Math.round(video.videoHeight * scale);
   const ctx = canvas.getContext("2d");
   ctx.save();
   ctx.translate(canvas.width, 0);
   ctx.scale(-1, 1);
-  ctx.drawImage(video, 0, 0);
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
   ctx.restore();
 
-  state.fotoBase64 = canvas.toDataURL("image/jpeg", 0.75).split(",")[1];
+  state.fotoBase64 = canvas.toDataURL("image/jpeg", 0.45).split(",")[1];
   const preview = document.getElementById("photoPreview");
-  preview.src = canvas.toDataURL("image/jpeg", 0.75);
+  preview.src = canvas.toDataURL("image/jpeg", 0.45);
   preview.style.display = "block";
   document.getElementById("camWrap").style.display = "none";
   document.getElementById("btnFoto").style.display = "none";
@@ -808,7 +810,6 @@ async function enviarMarcacion() {
     if (!resp.ok) throw new Error("HTTP " + resp.status);
   } catch(e) {
     console.warn("Flow registrar:", e.message);
-    // En modo demo igual mostramos éxito
   }
 
   mostrarExito(payload, now);
@@ -839,10 +840,8 @@ function mostrarExito(payload, now) {
 }
 
 function reiniciar() {
-  state = { codigo:null, trabajador:null, tipo:null, fotoBase64:null, lat:null, lng:null, stream:null, marcacionesHoy:[] };
-  document.getElementById("codigoInput").value = "";
-  document.getElementById("codigoInput").classList.remove("error");
-  showView(1);
+  // Reload limpia estado, caché de marcaciones y reinicia el flow de consulta
+  location.reload();
 }
 
 // ═══════════════════════════════════════════════════════════════════════
