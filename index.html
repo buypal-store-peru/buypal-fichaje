@@ -432,11 +432,11 @@
 // ═══════════════════════════════════════════════════════════════════════
 const CONFIG = {
   // Flow que devuelve lista de trabajadores activos (GET)
-  URL_OBTENER_TRABAJADORES: "https://defaultded40e64dd0d45c481e764cbbd2ab6.60.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/08dc51775c0347fdaae2369ad65c3978/triggers/manual/paths/invoke?api-version=1",
+  URL_OBTENER_TRABAJADORES: "https://defaultded40e64dd0d45c481e764cbbd2ab6.60.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/08dc51775c0347fdaae2369ad65c3978/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=Pfdbbv15DzYSZXP7cvIGKFaqWamTCrKQtyhBRz7DonY",
   // Flow que devuelve marcaciones del día de un trabajador (GET con ?codigo=BP001&fecha=2025-07-01)
-  URL_MARCACIONES_HOY:      "https://defaultded40e64dd0d45c481e764cbbd2ab6.60.environment.api.powerplatform.com/powerautomate/automations/direct/workflows/ef0cc2effd1c442ea188c6169cfee90d/triggers/manual/paths/invoke/marcaciones?api-version=1",
+  URL_MARCACIONES_HOY:      "https://defaultded40e64dd0d45c481e764cbbd2ab6.60.environment.api.powerplatform.com/powerautomate/automations/direct/workflows/ef0cc2effd1c442ea188c6169cfee90d/triggers/manual/paths/invoke/marcaciones?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=J-nKK1TkORPP1UiWx_JYuz00r-X4VrsTpPHXnZcc5h4",
   // Flow que recibe la marcación y guarda en Excel
-  URL_REGISTRAR:            "https://defaultded40e64dd0d45c481e764cbbd2ab6.60.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/28093c690375452696ee402d0e4bf9a2/triggers/manual/paths/invoke?api-version=1",
+  URL_REGISTRAR:            "https://defaultded40e64dd0d45c481e764cbbd2ab6.60.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/28093c690375452696ee402d0e4bf9a2/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=_YvyoNXp0ZE9rYze_RVne8rvtxAI_iidI2Xf5NOaNEg",
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -473,7 +473,8 @@ async function init() {
     const data = await resp.json();
     // Espera array: [{ codigo, nombre, cargo, jornada }]
     trabajadores = {};
-    (data.trabajadores || data).forEach(t => {
+    const lista = data?.trabajadores?.body || data?.trabajadores || data;
+    lista.forEach(t => {
       trabajadores[t.codigo.toUpperCase()] = {
         nombre:  t.nombre,
         cargo:   t.cargo,
@@ -586,7 +587,7 @@ async function cargarMarcacionesHoy(codigo) {
     if (!resp.ok) throw new Error();
     const data = await resp.json();
     // Espera: { marcaciones: ["ENTRADA","SALIDA_REFRI"] }
-    state.marcacionesHoy = (data.marcaciones || []).map(m => m.toUpperCase());
+    state.marcacionesHoy = (data?.marcaciones?.body || data?.marcaciones || []).map(m => m.toUpperCase());
   } catch(e) {
     // Sin conexión al flow → asumimos sin marcaciones previas
     state.marcacionesHoy = [];
