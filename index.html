@@ -459,40 +459,54 @@ const TIPO_LABELS = {
 const TIPO_ORDER = ["ENTRADA","SALIDA_REFRI","REGRESO_REFRI","SALIDA"];
 
 // ═══════════════════════════════════════════════════════════════════════
-// INIT — cargar trabajadores al arrancar
+// TRABAJADORES EMBEBIDOS — datos actuales al 21/04/2026
+// Se actualizan automáticamente vía trabajadores.json en GitHub
+// (ver instrucciones de Flow 4 en documentación del sistema)
+// ═══════════════════════════════════════════════════════════════════════
+const TRABAJADORES_BASE = {
+  "MESIAS":  { nombre: "Mesías",           cargo: "Post-venta y MercadoLibre", jornada: "FULL" },
+  "WEN":     { nombre: "Wendy Lanfranco",  cargo: "Jefa de ventas",            jornada: "FULL" },
+  "ANGELLA": { nombre: "Angella Huayhua",  cargo: "Asesora de ventas",         jornada: "FULL" },
+  "CRIS":    { nombre: "Cristhian Páucar", cargo: "Jefe de almacén",           jornada: "FULL" },
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// INIT — carga instantánea desde base embebida + refresco silencioso
 // ═══════════════════════════════════════════════════════════════════════
 async function init() {
-  showLoading("Cargando trabajadores...");
-  try {
-    const resp = await fetch(CONFIG.URL_OBTENER_TRABAJADORES, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({})
-    });
-    if (!resp.ok) throw new Error("HTTP " + resp.status);
-    const data = await resp.json();
-    // Espera array: [{ codigo, nombre, cargo, jornada }]
-    trabajadores = {};
-    const lista = data?.trabajadores?.body || data?.trabajadores || data;
-    lista.forEach(t => {
-      trabajadores[t.codigo.toUpperCase()] = {
-        nombre:  t.nombre,
-        cargo:   t.cargo,
-        jornada: t.jornada.toUpperCase()
-      };
-    });
-  } catch(e) {
-    console.warn("Flow trabajadores no configurado aún — usando demo");
-    // Fallback demo mientras no está configurado el flow
-    trabajadores = {
-      "BP001": { nombre: "Ana García",    cargo: "Almacén",  jornada: "FULL"  },
-      "BP002": { nombre: "Carlos López",  cargo: "Ventas",   jornada: "FULL"  },
-      "BP003": { nombre: "María Torres",  cargo: "Caja",     jornada: "MEDIO" },
-      "BP004": { nombre: "Rosa Huanca",   cargo: "Limpieza", jornada: "MEDIO" },
-    };
-  }
+  // 1. Carga instantánea — sin esperar ninguna red
+  trabajadores = { ...TRABAJADORES_BASE };
   hideLoading();
   showView(1);
+
+  // 2. Refresco silencioso en background desde trabajadores.json
+  //    (GitHub Pages, sin pasar por Power Automate)
+  //    Si falla, los datos embebidos siguen funcionando
+  try {
+    const resp = await fetch(
+      "https://buypal-store-peru.github.io/buypal-fichaje/trabajadores.json",
+      { cache: "no-store" }
+    );
+    if (!resp.ok) throw new Error();
+    const lista = await resp.json(); // array [{ codigo, nombre, cargo, jornada }]
+    const actualizados = {};
+    lista.forEach(t => {
+      if (t.activo?.toString().toLowerCase() === "sí" || t.activo === undefined) {
+        actualizados[t.codigo.toUpperCase()] = {
+          nombre:  t.nombre,
+          cargo:   t.cargo,
+          jornada: (t.jornada || "FULL").toUpperCase()
+        };
+      }
+    });
+    if (Object.keys(actualizados).length > 0) {
+      trabajadores = actualizados;
+      console.log("✓ Lista actualizada desde trabajadores.json:", Object.keys(actualizados).length, "trabajadores");
+    }
+  } catch(e) {
+    // Sin JSON en GitHub todavía → datos embebidos siguen activos
+    console.log("trabajadores.json no disponible — usando datos embebidos");
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════
