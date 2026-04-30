@@ -645,18 +645,20 @@ function renderTipos() {
   }
 
   // Estado de cada botón
+  // DESPUÉS
   const rules = {
-    ENTRADA:       () => !hechas.has("ENTRADA"),                         // disponible si no marcó entrada
-    SALIDA_REFRI:  () => hechas.has("ENTRADA") && !hechas.has("SALIDA_REFRI"),
-    REGRESO_REFRI: () => hechas.has("SALIDA_REFRI") && !hechas.has("REGRESO_REFRI"),
-    SALIDA:        () => hechas.has("ENTRADA") && !hechas.has("SALIDA"),
+    ENTRADA:       () => !hechas.has("ENTRADA"),
+    SALIDA_REFRI:  () => hechas.has("ENTRADA") && !hechas.has("SALIDA_REFRI") && !hechas.has("SALIDA"),
+    REGRESO_REFRI: () => hechas.has("SALIDA_REFRI") && !hechas.has("REGRESO_REFRI") && !hechas.has("SALIDA"),
+    SALIDA:        () => hechas.has("ENTRADA") && !hechas.has("SALIDA") && (!hechas.has("SALIDA_REFRI") || hechas.has("REGRESO_REFRI")),
   };
 
+  // DESPUÉS
   const hints = {
     ENTRADA:       "Ya registraste tu entrada hoy.",
-    SALIDA_REFRI:  "Debes marcar Entrada primero.",
-    REGRESO_REFRI: "Debes marcar Salida a refrigerio primero.",
-    SALIDA:        "Debes marcar Entrada primero.",
+    SALIDA_REFRI:  !hechas.has("ENTRADA") ? "Primero debes marcar Entrada." : "Ya terminaste tu turno.",
+    REGRESO_REFRI: !hechas.has("SALIDA_REFRI") ? "Primero debes marcar Salida a refrigerio." : "Ya terminaste tu turno.",
+    SALIDA:        !hechas.has("ENTRADA") ? "Primero debes marcar Entrada." : "Estás en refrigerio. Marca Regreso primero.",
   };
 
   TIPO_ORDER.forEach(tipo => {
