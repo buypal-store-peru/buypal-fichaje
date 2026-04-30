@@ -700,7 +700,15 @@ function selTipo(tipo) {
 // ═══════════════════════════════════════════════════════════════════════
 // STEP 3 — CÁMARA
 // ═══════════════════════════════════════════════════════════════════════
+// DESPUÉS
 async function irStep3() {
+  if (state.tipo !== "ENTRADA") {
+    // Saltar cámara directamente a confirmación
+    state.fotoBase64 = null;
+    prepararConfirmacion();
+    showView(4);
+    return;
+  }
   showView(3);
   await iniciarCamara();
 }
