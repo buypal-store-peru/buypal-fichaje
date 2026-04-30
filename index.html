@@ -780,14 +780,20 @@ function prepararConfirmacion() {
 }
 
 function obtenerUbicacion() {
-  if (!navigator.geolocation) return;
+  if (!navigator.geolocation) {
+    document.getElementById("locText").textContent = "⚠️ Tu dispositivo no soporta geolocalización";
+    return;
+  }
   navigator.geolocation.getCurrentPosition(
     pos => {
       state.lat = pos.coords.latitude.toFixed(6);
       state.lng = pos.coords.longitude.toFixed(6);
       document.getElementById("locText").textContent = `Ubicación capturada (${state.lat}, ${state.lng})`;
     },
-    () => { document.getElementById("locText").textContent = "Ubicación no disponible"; },
+    () => {
+      state.lat = null; state.lng = null;
+      document.getElementById("locText").textContent = "⚠️ Ubicación requerida — actívala en tu navegador";
+    },
     { timeout: 8000 }
   );
 }
@@ -796,6 +802,11 @@ function obtenerUbicacion() {
 // ENVIAR MARCACIÓN
 // ═══════════════════════════════════════════════════════════════════════
 async function enviarMarcacion() {
+  if (!state.lat || !state.lng) {
+    showToast("Debes permitir el acceso a tu ubicación para registrar la marcación.");
+    return;
+  }
+  
   const btn = document.getElementById("btnEnviar");
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner"></div> Registrando...';
