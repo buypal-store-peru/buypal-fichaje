@@ -885,8 +885,34 @@ function mostrarExito(payload, now) {
 }
 
 function reiniciar() {
-  // Reload limpia estado, caché de marcaciones y reinicia el flow de consulta
-  location.reload();
+  // Reset estado
+  state.codigo     = null;
+  state.trabajador = null;
+  state.tipo       = null;
+  state.fotoBase64 = null;
+  state.lat        = null;
+  state.lng        = null;
+  state.marcacionesHoy = [];
+  detenerStream();
+
+  // Limpiar input de código
+  document.getElementById("codigoInput").value = "";
+  document.getElementById("codigoInput").classList.remove("error");
+
+  // Resetear texto del botón continuar
+  document.getElementById("btnStep3").textContent = "Continuar →";
+  document.getElementById("btnStep3").disabled = true;
+
+  // Resetear botón enviar
+  const btnEnviar = document.getElementById("btnEnviar");
+  btnEnviar.disabled = false;
+  btnEnviar.innerHTML = "✅ Confirmar y registrar";
+
+  // Resetear ubicación
+  document.getElementById("locText").textContent = "Obteniendo ubicación...";
+
+  // Volver al step 1
+  showView(1);
 }
 
 // ═══════════════════════════════════════════════════════════════════════
