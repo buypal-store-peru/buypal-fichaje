@@ -793,11 +793,17 @@ function obtenerUbicacion() {
       state.lng = pos.coords.longitude.toFixed(6);
       document.getElementById("locText").textContent =
         `Ubicación capturada (${state.lat}, ${state.lng})`;
+      document.getElementById("locText").style.color = "var(--muted)";
     },
+    
     () => {
+      state.lat = null; state.lng = null;
       document.getElementById("locText").textContent =
-        "📍 Ubicación se obtendrá al confirmar";
+        "⚠️ Ubicación no disponible — actívala en tu navegador";
+      document.getElementById("locText").style.color = "var(--danger)";
     },
+
+    
     { timeout: 8000, maximumAge: 30000 }
   );
 }
@@ -806,6 +812,11 @@ function obtenerUbicacion() {
 // ENVIAR MARCACIÓN
 // ═══════════════════════════════════════════════════════════════════════
 async function enviarMarcacion() {
+  if (!state.lat || !state.lng) {
+    showToast("Debes activar la ubicación para registrar la marcación.");
+    return;
+  }
+
   const btn = document.getElementById("btnEnviar");
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner"></div> Registrando...';
