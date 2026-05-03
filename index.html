@@ -352,8 +352,9 @@
         </div>
       </div>
       <div class="tipo-hint" id="tipoHint"></div>
+      <!-- DESPUÉS -->
       <button class="btn btn-primary" onclick="irStep3()" id="btnStep3" disabled>
-        Tomar selfie →
+        Continuar →
       </button>
       <button class="btn btn-outline" onclick="volver(1)">← Volver</button>
     </div>
@@ -438,6 +439,8 @@ const CONFIG = {
   URL_MARCACIONES_HOY:      "https://defaultded40e64dd0d45c481e764cbbd2ab6.60.environment.api.powerplatform.com/powerautomate/automations/direct/workflows/ef0cc2effd1c442ea188c6169cfee90d/triggers/manual/paths/invoke/marcaciones?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=J-nKK1TkORPP1UiWx_JYuz00r-X4VrsTpPHXnZcc5h4",
   // Flow que recibe la marcación y guarda en Excel
   URL_REGISTRAR:            "https://defaultded40e64dd0d45c481e764cbbd2ab6.60.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/28093c690375452696ee402d0e4bf9a2/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=_YvyoNXp0ZE9rYze_RVne8rvtxAI_iidI2Xf5NOaNEg",
+  
+  URL_ACTUALIZAR_COORDS:    "",  // ← dejar vacío por ahora hasta crear el Flow
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -694,7 +697,10 @@ function selTipo(tipo) {
   document.getElementById("tipoHint").classList.remove("visible");
   state.tipo = tipo;
   TIPO_ORDER.forEach(t => document.getElementById("t_"+t).classList.toggle("selected", t === tipo));
-  document.getElementById("btnStep3").disabled = false;
+  // Cambiar texto del botón según tipo
+  const btnStep3 = document.getElementById("btnStep3");
+  btnStep3.textContent = tipo === "ENTRADA" ? "📷 Tomar selfie →" : "Continuar →";
+  btnStep3.disabled = false;
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -780,21 +786,19 @@ function prepararConfirmacion() {
 }
 
 function obtenerUbicacion() {
-  if (!navigator.geolocation) {
-    document.getElementById("locText").textContent = "⚠️ Tu dispositivo no soporta geolocalización";
-    return;
-  }
+  if (!navigator.geolocation) return;
   navigator.geolocation.getCurrentPosition(
     pos => {
       state.lat = pos.coords.latitude.toFixed(6);
       state.lng = pos.coords.longitude.toFixed(6);
-      document.getElementById("locText").textContent = `Ubicación capturada (${state.lat}, ${state.lng})`;
+      document.getElementById("locText").textContent =
+        `Ubicación capturada (${state.lat}, ${state.lng})`;
     },
     () => {
-      state.lat = null; state.lng = null;
-      document.getElementById("locText").textContent = "⚠️ Ubicación requerida — actívala en tu navegador";
+      document.getElementById("locText").textContent =
+        "📍 Ubicación se obtendrá al confirmar";
     },
-    { timeout: 8000 }
+    { timeout: 8000, maximumAge: 30000 }
   );
 }
 
@@ -802,11 +806,6 @@ function obtenerUbicacion() {
 // ENVIAR MARCACIÓN
 // ═══════════════════════════════════════════════════════════════════════
 async function enviarMarcacion() {
-  if (!state.lat || !state.lng) {
-    showToast("Debes permitir el acceso a tu ubicación para registrar la marcación.");
-    return;
-  }
-  
   const btn = document.getElementById("btnEnviar");
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner"></div> Registrando...';
@@ -823,6 +822,7 @@ async function enviarMarcacion() {
     dispositivo: navigator.userAgent.substring(0, 120)
   };
 
+  let sharepointId = null;
   try {
     const resp = await fetch(CONFIG.URL_REGISTRAR, {
       method: "POST",
@@ -830,11 +830,35 @@ async function enviarMarcacion() {
       body: JSON.stringify(payload)
     });
     if (!resp.ok) throw new Error("HTTP " + resp.status);
+    const data = await resp.json();
+    sharepointId = data?.id || null;
   } catch(e) {
     console.warn("Flow registrar:", e.message);
   }
 
   mostrarExito(payload, now);
+
+  // Si no había ubicación, obtenerla en segundo plano y actualizar
+  if ((!state.lat || !state.lng) && sharepointId && CONFIG.URL_ACTUALIZAR_COORDS) {
+    navigator.geolocation.getCurrentPosition(
+      async pos => {
+        const lat = pos.coords.latitude.toFixed(6);
+        const lng = pos.coords.longitude.toFixed(6);
+        try {
+          await fetch(CONFIG.URL_ACTUALIZAR_COORDS, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: sharepointId, lat, lng })
+          });
+          console.log("Coords actualizadas en segundo plano:", lat, lng);
+        } catch(e) {
+          console.warn("Actualizar coords:", e.message);
+        }
+      },
+      () => console.warn("Ubicación no disponible tras registro"),
+      { timeout: 30000, maximumAge: 0 }
+    );
+  }
 }
 
 function mostrarExito(payload, now) {
