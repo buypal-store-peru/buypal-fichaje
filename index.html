@@ -627,15 +627,20 @@ async function cargarMarcacionesHoy(codigo) {
     const marcHoy  = await parsear(respHoy);
     const marcAyer = await parsear(respAyer);
 
-    const ayerTieneEntrada = marcAyer.includes("ENTRADA");
-    const ayerTieneSalida  = marcAyer.includes("SALIDA");
+    // La última marcación de ayer determina si el turno sigue activo
+    const ultimaDeAyer     = marcAyer[marcAyer.length - 1];
+    const turnoActivoAyer  = ultimaDeAyer === "ENTRADA" ||
+                             ultimaDeAyer === "SALIDA_REFRI" ||
+                             ultimaDeAyer === "REGRESO_REFRI";
     const esMadrugada      = new Date().getHours() < 2;
-
-    if (ayerTieneEntrada && !ayerTieneSalida && esMadrugada) {
+    
+    if (turnoActivoAyer && esMadrugada) {
       state.marcacionesHoy = [...new Set([...marcAyer, ...marcHoy])];
     } else {
       state.marcacionesHoy = marcHoy;
     }
+
+    
 
   } catch(e) {
     state.marcacionesHoy = [];
