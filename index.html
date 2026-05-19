@@ -594,6 +594,15 @@ function renderWorkerCard(id, trab, codigo) {
 // MARCACIONES DEL DÍA
 // ═══════════════════════════════════════════════════════════════════════
 async function cargarMarcacionesHoy(codigo) {
+  
+  const ahora = new Date();
+  console.log("=== DEBUG cargarMarcacionesHoy ===");
+  console.log("Hora local:", ahora.toLocaleTimeString());
+  console.log("getHours():", ahora.getHours());
+  console.log("esMadrugada:", ahora.getHours() < 2);
+  console.log("todayISO:", todayISO());
+  console.log("yesterdayISO:", yesterdayISO());
+  
   state.marcacionesHoy = [];
   try {
     const fechaHoy  = todayISO();
