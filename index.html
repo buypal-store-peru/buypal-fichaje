@@ -597,15 +597,6 @@ function getHoraSimulada() { return 1; } // simula 01:00am
 // MARCACIONES DEL DÍA
 // ═══════════════════════════════════════════════════════════════════════
 async function cargarMarcacionesHoy(codigo) {
-  
-  const ahora = new Date();
-  console.log("=== DEBUG cargarMarcacionesHoy ===");
-  console.log("Hora local:", ahora.toLocaleTimeString());
-  console.log("getHours():", ahora.getHours());
-  console.log("esMadrugada:", ahora.getHours() < 2);
-  console.log("todayISO:", todayISO());
-  console.log("yesterdayISO:", yesterdayISO());
-  
   state.marcacionesHoy = [];
   try {
     const fechaHoy  = todayISO();
@@ -624,34 +615,42 @@ async function cargarMarcacionesHoy(codigo) {
       })
     ]);
 
+    // Parsear devuelve objetos { tipo, timestamp }
     const parsear = async (resp) => {
       if (!resp.ok) return [];
       const data = await resp.json();
       const rawList = data?.marcaciones?.body || data?.marcaciones || [];
-      return rawList.map(m => {
-        if (typeof m === "string") return m.toUpperCase();
-        if (m?.TipoMarcacion) return m.TipoMarcacion.toUpperCase();
-        if (m?.tipo) return m.tipo.toUpperCase();
-        return "";
-      }).filter(Boolean);
+      return rawList.map(m => ({
+        tipo:      (m?.TipoMarcacion || m?.tipo || "").toString().toUpperCase(),
+        timestamp: m?.Timestamp || m?.timestamp || ""
+      })).filter(m => m.tipo);
     };
 
     const marcHoy  = await parsear(respHoy);
     const marcAyer = await parsear(respAyer);
 
-    const ayerTieneEntrada = marcAyer.includes("ENTRADA");
-    const ayerTieneSalida  = marcAyer.includes("SALIDA");
-    
-    //const esMadrugada = new Date().getHours() < 2;
-    const esMadrugada = getNowForTest().getHours() < 2;
-    
-    if (ayerTieneEntrada && !ayerTieneSalida && esMadrugada) {
-      state.marcacionesHoy = [...new Set([...marcAyer, ...marcHoy])];
-    } else {
-      state.marcacionesHoy = marcHoy;
-    }
+    // Última ENTRADA de ayer ordenada por timestamp
+    const entradasAyer = marcAyer
+      .filter(m => m.tipo === "ENTRADA")
+      .sort((a, b) => a.timestamp > b.timestamp ? 1 : -1);
+    const ultimaEntrada = entradasAyer[entradasAyer.length - 1];
 
-    
+    // ¿Hay SALIDA posterior a esa última ENTRADA?
+    const haySalidaDespues = ultimaEntrada
+      ? marcAyer.some(m => m.tipo === "SALIDA" && m.timestamp > ultimaEntrada.timestamp)
+      : false;
+
+    const esMadrugada        = new Date().getHours() < 2;
+    const turnoNocturnoActivo = ultimaEntrada && !haySalidaDespues && esMadrugada;
+
+    if (turnoNocturnoActivo) {
+      // Heredar solo ENTRADA de ayer (no SALIDAS anteriores del mismo día)
+      // más las marcaciones de hoy
+      const tiposHoy = marcHoy.map(m => m.tipo);
+      state.marcacionesHoy = ["ENTRADA", ...tiposHoy];
+    } else {
+      state.marcacionesHoy = marcHoy.map(m => m.tipo);
+    }
 
   } catch(e) {
     state.marcacionesHoy = [];
