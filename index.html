@@ -590,6 +590,9 @@ function renderWorkerCard(id, trab, codigo) {
     <div class="worker-badge ${trab.jornada === 'FULL' ? 'badge-full' : 'badge-medio'}">${trab.jornada}</div>`;
 }
 
+// TEMPORAL SOLO PARA PRUEBA — borrar después
+function getHoraSimulada() { return 1; } // simula 01:00am
+  
 // ═══════════════════════════════════════════════════════════════════════
 // MARCACIONES DEL DÍA
 // ═══════════════════════════════════════════════════════════════════════
@@ -638,7 +641,9 @@ async function cargarMarcacionesHoy(codigo) {
 
     const ayerTieneEntrada = marcAyer.includes("ENTRADA");
     const ayerTieneSalida  = marcAyer.includes("SALIDA");
-    const esMadrugada      = new Date().getHours() < 2;
+    
+    //const esMadrugada = new Date().getHours() < 2;
+    const esMadrugada = getNowForTest().getHours() < 2;
     
     if (ayerTieneEntrada && !ayerTieneSalida && esMadrugada) {
       state.marcacionesHoy = [...new Set([...marcAyer, ...marcHoy])];
