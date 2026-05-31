@@ -612,7 +612,6 @@ async function cargarMarcacionesHoy(codigo) {
       })
     ]);
 
-    // Parsear devuelve objetos { tipo, timestamp }
     const parsear = async (resp) => {
       if (!resp.ok) return [];
       const data = await resp.json();
@@ -626,25 +625,38 @@ async function cargarMarcacionesHoy(codigo) {
     const marcHoy  = await parsear(respHoy);
     const marcAyer = await parsear(respAyer);
 
-    // Última ENTRADA de ayer ordenada por timestamp
+    // ── Turno nocturno: ENTRADA de ayer sin SALIDA posterior ─────────
     const entradasAyer = marcAyer
       .filter(m => m.tipo === "ENTRADA")
       .sort((a, b) => a.timestamp > b.timestamp ? 1 : -1);
     const ultimaEntrada = entradasAyer[entradasAyer.length - 1];
-
-    // ¿Hay SALIDA posterior a esa última ENTRADA?
     const haySalidaDespues = ultimaEntrada
       ? marcAyer.some(m => m.tipo === "SALIDA" && m.timestamp > ultimaEntrada.timestamp)
       : false;
-
     const esMadrugada        = new Date().getHours() < 2;
     const turnoNocturnoActivo = ultimaEntrada && !haySalidaDespues && esMadrugada;
 
+    // ── SALIDA de madrugada del turno anterior ───────────────────────
+    // Si la única SALIDA de hoy fue antes de las 6am Lima, es del turno
+    // anterior — descartarla para que ENTRADA quede disponible de nuevo
+    const salidaMadrugada = marcHoy.find(m => {
+      if (m.tipo !== "SALIDA") return false;
+      const ts = new Date(m.timestamp);
+      const horaLima = (ts.getUTCHours() - 5 + 24) % 24;
+      return horaLima < 6;
+    });
+    const horaActual = new Date().getHours();
+    const soloSalidaMadrugada = salidaMadrugada &&
+      marcHoy.filter(m => m.tipo === "SALIDA").length === 1 &&
+      horaActual >= 6;
+
     if (turnoNocturnoActivo) {
-      // Heredar solo ENTRADA de ayer (no SALIDAS anteriores del mismo día)
-      // más las marcaciones de hoy
-      const tiposHoy = marcHoy.map(m => m.tipo);
-      state.marcacionesHoy = ["ENTRADA", ...tiposHoy];
+      state.marcacionesHoy = ["ENTRADA", ...marcHoy.map(m => m.tipo)];
+    } else if (soloSalidaMadrugada) {
+      // Filtrar la SALIDA de madrugada — pertenece al turno anterior
+      state.marcacionesHoy = marcHoy
+        .filter(m => !(m.tipo === "SALIDA" && m.timestamp === salidaMadrugada.timestamp))
+        .map(m => m.tipo);
     } else {
       state.marcacionesHoy = marcHoy.map(m => m.tipo);
     }
