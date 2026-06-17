@@ -269,6 +269,58 @@
   .mt12 { margin-top: 12px; }
   .hidden { display: none !important; }
   .center { text-align: center; }
+
+  /* ── MINI RESUMEN ON-DEMAND ── */
+  #resumenFab {
+    position: fixed; bottom: 20px; right: 20px; z-index: 55;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff; border: none; border-radius: 30px; padding: 13px 18px;
+    font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600;
+    box-shadow: 0 6px 20px rgba(79,142,247,.35); cursor: pointer;
+    display: flex; align-items: center; gap: 7px;
+  }
+  #resumenFab:active { transform: scale(.96); }
+  #resumenOverlay {
+    position: fixed; inset: 0; background: rgba(13,15,20,.72); backdrop-filter: blur(2px);
+    display: flex; align-items: flex-end; justify-content: center; z-index: 60;
+    opacity: 0; pointer-events: none; transition: opacity .25s;
+  }
+  #resumenOverlay.open { opacity: 1; pointer-events: auto; }
+  .resumen-sheet {
+    background: var(--surface); width: 100%; max-width: 480px; max-height: 90svh;
+    border-radius: 20px 20px 0 0; border: 1px solid var(--border); border-bottom: none;
+    display: flex; flex-direction: column; overflow: hidden;
+    transform: translateY(100%); transition: transform .3s;
+  }
+  #resumenOverlay.open .resumen-sheet { transform: translateY(0); }
+  .resumen-head {
+    padding: 18px 20px 14px; border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+  }
+  .resumen-head h2 { font-size: 16px; font-weight: 700; }
+  .resumen-head .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .resumen-close {
+    background: var(--surface2); border: 1px solid var(--border); color: var(--muted);
+    width: 32px; height: 32px; border-radius: 50%; font-size: 15px; cursor: pointer; flex-shrink: 0;
+  }
+  #resumenBody { padding: 18px 20px 28px; overflow-y: auto; }
+  .resumen-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 4px; }
+  .rs-stat { background: var(--surface2); border-radius: 12px; padding: 12px 8px; text-align: center; }
+  .rs-stat .n { font-size: 20px; font-weight: 700; font-family: 'DM Mono', monospace; }
+  .rs-stat .l { font-size: 10px; color: var(--muted); margin-top: 3px; text-transform: uppercase; letter-spacing: .5px; }
+  .rs-section-title { font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin: 20px 0 10px; }
+  .rs-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .rs-table th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); font-weight: 600; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  .rs-table td { padding: 8px; border-bottom: 1px solid var(--border); }
+  .rs-table td.extra { font-family: 'DM Mono', monospace; color: var(--success); text-align: right; }
+  .rs-table td.extra.zero { color: var(--muted); }
+  .rs-falta { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px; margin-bottom: 6px; font-size: 13px; }
+  .rs-falta.novino { background: rgba(240,90,90,.1); border: 1px solid rgba(240,90,90,.25); }
+  .rs-falta.incompleta { background: rgba(245,166,35,.1); border: 1px solid rgba(245,166,35,.25); }
+  .rs-falta .fecha { font-weight: 600; }
+  .rs-falta .det { margin-left: auto; font-size: 11px; color: var(--muted); }
+  .resumen-loading { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 40px 0; }
+  .resumen-empty { text-align: center; color: var(--muted); font-size: 13px; padding: 30px 0; }
 </style>
 </head>
 <body>
@@ -426,6 +478,31 @@
 
 </div><!-- /container -->
 
+<!-- ── MINI RESUMEN ON-DEMAND ── -->
+<button id="resumenFab" onclick="abrirResumen()">📊 Ver mi resumen</button>
+
+<div id="resumenOverlay" onclick="if(event.target===this)cerrarResumen()">
+  <div class="resumen-sheet">
+    <div class="resumen-head">
+      <div>
+        <h2>Mi resumen del mes</h2>
+        <div class="sub" id="resumenSub">Solo lectura</div>
+      </div>
+      <button class="resumen-close" onclick="cerrarResumen()">✕</button>
+    </div>
+    <div id="resumenBody">
+      <div id="resumenStepCode">
+        <label for="resumenCodigo">Ingresa tu código para ver cómo vas</label>
+        <input id="resumenCodigo" type="text" placeholder="Ej: BP001" autocomplete="off" autocapitalize="characters" maxlength="10">
+        <button class="btn btn-primary" onclick="verResumen()">Ver resumen →</button>
+      </div>
+      <div id="resumenStepData" style="display:none;">
+        <div id="resumenData"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -441,6 +518,8 @@ const CONFIG = {
   URL_REGISTRAR:            "https://defaultded40e64dd0d45c481e764cbbd2ab6.60.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/28093c690375452696ee402d0e4bf9a2/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=_YvyoNXp0ZE9rYze_RVne8rvtxAI_iidI2Xf5NOaNEg",
   
   URL_ACTUALIZAR_COORDS:    "https://defaultded40e64dd0d45c481e764cbbd2ab6.60.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/792c6e5bd7144792935cc31bbd163273/triggers/manual/paths/invoke?api-version=1",  // ← dejar vacío por ahora hasta crear el Flow
+  // Flow[7] resumen On-Demand (POST { codigo }) → { nombre, jornada, inasistencias, asistencia:[] }
+  URL_RESUMEN_MES:          "",   // ← pegar la URL del nuevo Flow
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -995,6 +1074,133 @@ function showLoading(msg) {
 }
 function hideLoading() {
   document.getElementById("loadingOverlay").classList.add("hidden");
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// MINI RESUMEN ON-DEMAND (solo lectura, independiente del fichaje)
+// Las faltas YA vienen resueltas del OfficeScript v8. El HTML solo pinta;
+// no reconstruye días, ni turnos nocturnos, ni calendario. Cero lógica de negocio.
+// ═══════════════════════════════════════════════════════════════════════
+const RS_DIAS  = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+const RS_MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+
+function abrirResumen() {
+  document.getElementById("resumenOverlay").classList.add("open");
+  mostrarResumenPaso("code");
+  const inp = document.getElementById("resumenCodigo");
+  inp.value = ""; inp.classList.remove("error");
+  document.getElementById("resumenSub").textContent = "Solo lectura";
+  setTimeout(() => inp.focus(), 250);
+}
+function cerrarResumen() { document.getElementById("resumenOverlay").classList.remove("open"); }
+function mostrarResumenPaso(paso) {
+  document.getElementById("resumenStepCode").style.display = paso === "code" ? "block" : "none";
+  document.getElementById("resumenStepData").style.display = paso === "data" ? "block" : "none";
+}
+document.getElementById("resumenCodigo").addEventListener("keydown", e => { if (e.key === "Enter") verResumen(); });
+
+async function verResumen() {
+  const inp = document.getElementById("resumenCodigo");
+  const codigo = inp.value.trim().toUpperCase();
+  if (!codigo) { inp.classList.add("error"); showToast("Ingresa tu código"); return; }
+  inp.classList.remove("error");
+
+  mostrarResumenPaso("data");
+  document.getElementById("resumenData").innerHTML =
+    '<div class="resumen-loading"><div class="spinner-lg"></div><div class="load-text">Cargando tu resumen...</div></div>';
+
+  if (!CONFIG.URL_RESUMEN_MES) {
+    document.getElementById("resumenData").innerHTML =
+      '<div class="resumen-empty">Resumen no configurado todavía.</div>' + btnVolverResumen();
+    return;
+  }
+  try {
+    const resp = await fetch(CONFIG.URL_RESUMEN_MES, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ codigo })
+    });
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+    renderResumen(codigo, await resp.json());
+  } catch (e) {
+    document.getElementById("resumenData").innerHTML =
+      '<div class="resumen-empty">No se pudo cargar el resumen. Intenta de nuevo.</div>' + btnVolverResumen();
+  }
+}
+function btnVolverResumen() {
+  return '<button class="btn btn-outline" onclick="mostrarResumenPaso(\'code\')" style="margin-top:18px;">← Otro código</button>';
+}
+function rsFmtFecha(iso) {
+  const d = new Date(iso + "T12:00:00Z");
+  if (isNaN(d)) return iso;
+  return RS_DIAS[d.getUTCDay()] + " " + String(d.getUTCDate()).padStart(2, "0");
+}
+function rsFmtHoras(min) {
+  min = Number(min) || 0;
+  if (min <= 0) return "0";
+  const h = Math.floor(min / 60), m = min % 60;
+  return h ? (h + "h" + (m ? m + "m" : "")) : (m + "m");
+}
+
+function renderResumen(codigo, data) {
+  const filasAsist = (data?.asistencia?.body || data?.asistencia || []);
+  const nombre     = data?.nombre || codigo;
+  const inasisRaw  = (data?.inasistencias || "").toString();
+
+  const nowLima = new Date(Date.now() - 5 * 3600000);
+  const ym = nowLima.getUTCFullYear() + "-" + String(nowLima.getUTCMonth() + 1).padStart(2, "0");
+  const tituloMes = RS_MESES[nowLima.getUTCMonth()] + " " + nowLima.getUTCFullYear();
+
+  const norm = r => ({
+    fecha: (r.Fecha || r.fecha || "").toString().substring(0, 10),
+    ent:   (r.HoraEntrada || r.ENTRADA || r.entrada || "").toString().trim(),
+    sal:   (r.HoraSalida  || r.SALIDA  || r.salida  || "").toString().trim(),
+    extra: Number(r.MinExtra ?? r.minExtra ?? 0) || 0,
+    obs:   (r.Observaciones || r.observaciones || "").toString()
+  });
+
+  const rows = filasAsist.map(norm).filter(r => r.fecha.startsWith(ym));
+  const completos = rows.filter(r => r.ent && r.sal && !r.obs.toUpperCase().startsWith("FALTA")).sort((a, b) => a.fecha < b.fecha ? -1 : 1);
+  const faltaMarc = rows.filter(r => r.obs.toUpperCase().startsWith("FALTA")).sort((a, b) => a.fecha < b.fecha ? -1 : 1);
+  const inasist   = inasisRaw.split(/[;,]/).map(s => s.trim().substring(0, 10)).filter(Boolean).sort();
+
+  const totalExtra  = completos.reduce((a, r) => a + r.extra, 0);
+  const totalFaltas = faltaMarc.length + inasist.length;
+
+  document.getElementById("resumenSub").textContent = nombre + " · " + tituloMes;
+
+  let html = `
+    <div class="resumen-stats">
+      <div class="rs-stat"><div class="n">${completos.length}</div><div class="l">Días</div></div>
+      <div class="rs-stat"><div class="n" style="color:${totalFaltas ? 'var(--danger)' : 'var(--success)'}">${totalFaltas}</div><div class="l">Faltas</div></div>
+      <div class="rs-stat"><div class="n" style="color:var(--success)">${rsFmtHoras(totalExtra)}</div><div class="l">Extra</div></div>
+    </div>`;
+
+  if (completos.length) {
+    html += `<div class="rs-section-title">Asistencia registrada</div>
+      <table class="rs-table"><thead><tr><th>Fecha</th><th>Entrada</th><th>Salida</th><th style="text-align:right">Extra</th></tr></thead><tbody>`;
+    completos.forEach(r => {
+      html += `<tr><td>${rsFmtFecha(r.fecha)}</td><td>${r.ent}</td><td>${r.sal}</td>`
+            + `<td class="extra ${r.extra ? '' : 'zero'}">${r.extra ? '+' + r.extra + 'm' : '—'}</td></tr>`;
+    });
+    html += `</tbody></table>`;
+  } else {
+    html += `<div class="resumen-empty">Aún no tienes asistencias completas este mes.</div>`;
+  }
+
+  if (inasist.length) {
+    html += `<div class="rs-section-title">Faltas — no marcó el día</div>`;
+    inasist.forEach(f => { html += `<div class="rs-falta novino"><span>🔴</span><span class="fecha">${rsFmtFecha(f)}</span><span class="det">Sin Entrada ni Salida</span></div>`; });
+  }
+  if (faltaMarc.length) {
+    html += `<div class="rs-section-title">Faltas — marcación incompleta</div>`;
+    faltaMarc.forEach(r => { html += `<div class="rs-falta incompleta"><span>⚠️</span><span class="fecha">${rsFmtFecha(r.fecha)}</span><span class="det">No marcó Salida</span></div>`; });
+  }
+  if (!totalFaltas) {
+    html += `<div class="rs-section-title">Faltas</div><div class="resumen-empty" style="padding:14px 0">Sin faltas este mes. ¡Bien! 🎉</div>`;
+  }
+
+  html += btnVolverResumen();
+  document.getElementById("resumenData").innerHTML = html;
 }
 
 // ── ARRANCAR ──
