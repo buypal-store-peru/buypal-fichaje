@@ -519,7 +519,7 @@ const CONFIG = {
   
   URL_ACTUALIZAR_COORDS:    "https://defaultded40e64dd0d45c481e764cbbd2ab6.60.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/792c6e5bd7144792935cc31bbd163273/triggers/manual/paths/invoke?api-version=1",  // ← dejar vacío por ahora hasta crear el Flow
   // Flow[7] resumen On-Demand (POST { codigo }) → { nombre, jornada, inasistencias, asistencia:[] }
-  URL_RESUMEN_MES:          "",   // ← pegar la URL del nuevo Flow
+  URL_RESUMEN_MES:          "https://defaultded40e64dd0d45c481e764cbbd2ab6.60.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/c7a398ee1b9a404d84c4c3aa4b2ffd4c/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=WcqhqpUWOquGp7HB1jSA8nyWzTLvIuiADqlkhiHaTlM",   // ← pegar la URL del nuevo Flow
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1129,16 +1129,6 @@ async function verResumen() {
 function btnVolverResumen() {
   return '<button class="btn btn-outline" onclick="mostrarResumenPaso(\'code\')" style="margin-top:18px;">← Otro código</button>';
 }
-function rsNormFecha(raw) {
-  // Admite "YYYY-MM-DD" tal cual, o serial de Excel (ej. 46183 → 2026-06-04)
-  const s = (raw || "").toString().trim();
-  const num = Number(s);
-  if (!isNaN(num) && s !== "" && !s.includes("-") && num > 40000) {
-    const dt = new Date((num - 25569) * 86400000);
-    return dt.getUTCFullYear() + "-" + String(dt.getUTCMonth() + 1).padStart(2, "0") + "-" + String(dt.getUTCDate()).padStart(2, "0");
-  }
-  return s.substring(0, 10);
-}
 function rsFmtFecha(iso) {
   const d = new Date(iso + "T12:00:00Z");
   if (isNaN(d)) return iso;
@@ -1171,7 +1161,7 @@ function renderResumen(codigo, data) {
   const rows = filasAsist.map(norm).filter(r => r.fecha.startsWith(ym));
   const completos = rows.filter(r => r.ent && r.sal && !r.obs.toUpperCase().startsWith("FALTA")).sort((a, b) => a.fecha < b.fecha ? -1 : 1);
   const faltaMarc = rows.filter(r => r.obs.toUpperCase().startsWith("FALTA")).sort((a, b) => a.fecha < b.fecha ? -1 : 1);
-  const inasist   = inasisRaw.split(/[;,]/).map(s => rsNormFecha(s)).filter(Boolean).sort();
+  const inasist   = inasisRaw.split(/[;,]/).map(s => s.trim().substring(0, 10)).filter(Boolean).sort();
 
   const totalExtra  = completos.reduce((a, r) => a + r.extra, 0);
   const totalFaltas = faltaMarc.length + inasist.length;
