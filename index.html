@@ -965,7 +965,7 @@ async function enviarMarcacion() {
     dispositivo: navigator.userAgent.substring(0, 120)
   };
 
-  let sharepointId = null;
+let sharepointId = null;
   try {
     const resp = await fetch(CONFIG.URL_REGISTRAR, {
       method: "POST",
@@ -977,9 +977,18 @@ async function enviarMarcacion() {
     sharepointId = data?.id || null;
   } catch(e) {
     console.warn("Flow registrar:", e.message);
+    // El registro NO se confirmó → mostrar error real, NO éxito falso
+    btn.disabled = false;
+    btn.innerHTML = "Reintentar registro";
+    mostrarErrorRegistro();
+    return;
   }
 
   mostrarExito(payload, now);
+
+  function mostrarErrorRegistro() {
+  showToast("⚠️ No se pudo registrar tu marcación. Revisa tu conexión y toca 'Reintentar registro'. NO cierres esta pantalla.");
+}
 
   // Si no había ubicación, obtenerla en segundo plano y actualizar
   if ((!state.lat || !state.lng) && sharepointId && CONFIG.URL_ACTUALIZAR_COORDS) {
