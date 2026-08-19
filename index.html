@@ -646,8 +646,12 @@ async function verificarCodigo() {
   renderWorkerCard("workerCard",  trab, codigo);
   renderWorkerCard("workerCard2", trab, codigo);
 
-  // Cargar marcaciones del día antes de mostrar step 2
+  // Cargar marcaciones del turno antes de mostrar step 2
   await cargarMarcacionesHoy(codigo);
+  if (!state.consultaOK) {
+    showToast("\u26a0\ufe0f No pudimos verificar tus marcaciones. Revisa tu conexión e intenta de nuevo.");
+    return;   // NO avanza: mejor bloquear que desbloquear a ciegas
+  }
   showView(2);
   renderTipos();
   obtenerUbicacion();
@@ -674,74 +678,46 @@ function renderWorkerCard(id, trab, codigo) {
 // ═══════════════════════════════════════════════════════════════════════
 async function cargarMarcacionesHoy(codigo) {
   state.marcacionesHoy = [];
+  state.consultaOK = false;
+
+  const ctrl  = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 12000);
   try {
-    const fechaHoy  = todayISO();
-    const fechaAyer = yesterdayISO();
+    const resp = await fetch(CONFIG.URL_MARCACIONES_HOY, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ codigo }),
+      signal: ctrl.signal
+    });
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+    const data = await resp.json();
+    const rawList = data?.marcaciones?.body || data?.marcaciones || [];
 
-    const [respHoy, respAyer] = await Promise.all([
-      fetch(CONFIG.URL_MARCACIONES_HOY, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ codigo, fecha: fechaHoy })
-      }),
-      fetch(CONFIG.URL_MARCACIONES_HOY, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ codigo, fecha: fechaAyer })
-      })
-    ]);
-
-    const parsear = async (resp) => {
-      if (!resp.ok) return [];
-      const data = await resp.json();
-      const rawList = data?.marcaciones?.body || data?.marcaciones || [];
-      return rawList.map(m => ({
+    const marcas = rawList
+      .map(m => ({
         tipo:      (m?.TipoMarcacion || m?.tipo || "").toString().toUpperCase(),
         timestamp: m?.Timestamp || m?.timestamp || ""
-      })).filter(m => m.tipo);
-    };
-
-    const marcHoy  = await parsear(respHoy);
-    const marcAyer = await parsear(respAyer);
-
-    // ── Turno nocturno: ENTRADA de ayer sin SALIDA posterior ─────────
-    const entradasAyer = marcAyer
-      .filter(m => m.tipo === "ENTRADA")
+      }))
+      .filter(m => m.tipo && m.timestamp)
       .sort((a, b) => a.timestamp > b.timestamp ? 1 : -1);
-    const ultimaEntrada = entradasAyer[entradasAyer.length - 1];
-    const haySalidaDespues = ultimaEntrada
-      ? marcAyer.some(m => m.tipo === "SALIDA" && m.timestamp > ultimaEntrada.timestamp)
-      : false;
-    const esMadrugada        = new Date().getHours() < 2;
-    const turnoNocturnoActivo = ultimaEntrada && !haySalidaDespues && esMadrugada;
 
-    // ── SALIDA de madrugada del turno anterior ───────────────────────
-    // Si la única SALIDA de hoy fue antes de las 6am Lima, es del turno
-    // anterior — descartarla para que ENTRADA quede disponible de nuevo
-    const salidaMadrugada = marcHoy.find(m => {
-      if (m.tipo !== "SALIDA") return false;
-      const ts = new Date(m.timestamp);
-      const horaLima = (ts.getUTCHours() - 5 + 24) % 24;
-      return horaLima < 6;
-    });
-    const horaActual = new Date().getHours();
-    const soloSalidaMadrugada = salidaMadrugada &&
-      marcHoy.filter(m => m.tipo === "SALIDA").length === 1 &&
-      horaActual >= 6;
-
-    if (turnoNocturnoActivo) {
-      state.marcacionesHoy = ["ENTRADA", ...marcHoy.map(m => m.tipo)];
-    } else if (soloSalidaMadrugada) {
-      // Filtrar la SALIDA de madrugada — pertenece al turno anterior
-      state.marcacionesHoy = marcHoy
-        .filter(m => !(m.tipo === "SALIDA" && m.timestamp === salidaMadrugada.timestamp))
-        .map(m => m.tipo);
+    // El turno vigente = desde la ULTIMA ENTRADA en adelante.
+    // Si despues de esa ENTRADA ya hubo SALIDA, el turno esta cerrado.
+    // Sin fechas de calendario: funciona igual a las 23:00 que a las 02:00.
+    const idxEntrada = marcas.map(m => m.tipo).lastIndexOf("ENTRADA");
+    if (idxEntrada === -1) {
+      state.marcacionesHoy = [];
     } else {
-      state.marcacionesHoy = marcHoy.map(m => m.tipo);
+      const delTurno = marcas.slice(idxEntrada);
+      const cerrado  = delTurno.some(m => m.tipo === "SALIDA");
+      state.marcacionesHoy = cerrado ? [] : delTurno.map(m => m.tipo);
     }
-
-  } catch(e) {
-    state.marcacionesHoy = [];
+    state.consultaOK = true;
+  } catch (e) {
+    console.warn("Marcaciones:", e.message);
+    state.consultaOK = false;   // no se pudo verificar -> NO desbloquear nada
+  } finally {
+    clearTimeout(timer);
   }
 }
 
